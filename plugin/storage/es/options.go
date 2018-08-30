@@ -25,18 +25,21 @@ import (
 )
 
 const (
-	suffixUsername          = ".username"
-	suffixPassword          = ".password"
-	suffixSniffer           = ".sniffer"
-	suffixServerURLs        = ".server-urls"
-	suffixMaxSpanAge        = ".max-span-age"
-	suffixNumShards         = ".num-shards"
-	suffixNumReplicas       = ".num-replicas"
-	suffixBulkSize          = ".bulk.size"
-	suffixBulkWorkers       = ".bulk.workers"
-	suffixBulkActions       = ".bulk.actions"
-	suffixBulkFlushInterval = ".bulk.flush-interval"
-	suffixIndexPrefix       = ".index-prefix"
+	suffixUsername              = ".username"
+	suffixPassword              = ".password"
+	suffixSniffer               = ".sniffer"
+	suffixServerURLs            = ".server-urls"
+	suffixMaxSpanAge            = ".max-span-age"
+	suffixNumShards             = ".num-shards"
+	suffixNumReplicas           = ".num-replicas"
+	suffixBulkSize              = ".bulk.size"
+	suffixBulkWorkers           = ".bulk.workers"
+	suffixBulkActions           = ".bulk.actions"
+	suffixBulkFlushInterval     = ".bulk.flush-interval"
+	suffixIndexPrefix           = ".index-prefix"
+	suffixAwsIamAccessKeyID     = ".aws.access_key_id"
+	suffixAwsIamSecretAccessKey = ".aws.secret_access_key"
+	suffixAwsRegion             = ".aws.region"
 )
 
 // TODO this should be moved next to config.Configuration struct (maybe ./flags package)
@@ -75,6 +78,11 @@ func NewOptions(primaryNamespace string, otherNamespaces ...string) *Options {
 				BulkWorkers:       1,
 				BulkActions:       1000,
 				BulkFlushInterval: time.Millisecond * 200,
+				AwsConfig: config.AwsIamConfiguration{
+					AccessKeyID:     "",
+					SecretAccessKey: "",
+					Region:          "",
+				},
 			},
 			servers:   "http://127.0.0.1:9200",
 			namespace: primaryNamespace,
@@ -146,6 +154,18 @@ func addFlags(flagSet *flag.FlagSet, nsConfig *namespaceConfig) {
 		nsConfig.namespace+suffixIndexPrefix,
 		nsConfig.IndexPrefix,
 		"Optional prefix of Jaeger indices. For example \"production\" creates \"production:jaeger-*\".")
+	flagSet.String(
+		nsConfig.namespace+suffixAwsIamAccessKeyID,
+		nsConfig.AwsConfig.AccessKeyID,
+		"The access key name to use if using AWS ElasticSearch and connecting with IAM authentication")
+	flagSet.String(
+		nsConfig.namespace+suffixAwsIamSecretAccessKey,
+		nsConfig.AwsConfig.SecretAccessKey,
+		"The secret access key to use if using AWS ElasticSearch and connecting with IAM authentication")
+	flagSet.String(
+		nsConfig.namespace+suffixAwsRegion,
+		nsConfig.AwsConfig.Region,
+		"The AWS region to use if using AWS ElasticSearch and connecting with IAM authentication")
 }
 
 // InitFromViper initializes Options with properties from viper
@@ -169,6 +189,9 @@ func initFromViper(cfg *namespaceConfig, v *viper.Viper) {
 	cfg.BulkActions = v.GetInt(cfg.namespace + suffixBulkActions)
 	cfg.BulkFlushInterval = v.GetDuration(cfg.namespace + suffixBulkFlushInterval)
 	cfg.IndexPrefix = v.GetString(cfg.namespace + suffixIndexPrefix)
+	cfg.AwsConfig.AccessKeyID = v.GetString(cfg.namespace + suffixAwsIamAccessKeyID)
+	cfg.AwsConfig.SecretAccessKey = v.GetString(cfg.namespace + suffixAwsIamSecretAccessKey)
+	cfg.AwsConfig.Region = v.GetString(cfg.namespace + suffixAwsRegion)
 }
 
 // GetPrimary returns primary configuration.
